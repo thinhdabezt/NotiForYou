@@ -1,7 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:notiforyou/constants/routes.dart';
+import 'package:notiforyou/services/auth/auth_exceptions.dart';
+import 'package:notiforyou/services/auth/auth_service.dart';
 import 'package:notiforyou/utilities/show_error_dialog.dart';
+
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
 
@@ -30,9 +32,7 @@ class _LoginViewState extends State<LoginView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Login"),
-      ),
+      appBar: AppBar(title: const Text("Login")),
       body: Column(
         children: [
           TextField(
@@ -54,33 +54,41 @@ class _LoginViewState extends State<LoginView> {
               final email = _email.text;
               final password = _password.text;
               try {
-                await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
-                final user = FirebaseAuth.instance.currentUser;
-                if (!user!.emailVerified) {
-                  Navigator.of(context).pushNamedAndRemoveUntil(verifyEmailRoute, (route) => false);
+                await AuthService.firebase().login(
+                  email: email,
+                  password: password,
+                );
+                final user = AuthService.firebase().currentUser;
+                if (user?.isEmailVerified ?? false) {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil(notesRoute, (route) => false);
                 } else {
-                  Navigator.of(context).pushNamedAndRemoveUntil(notesRoute, (route) => false);
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil(verifyEmailRoute, (route) => false);
                 }
-              } on FirebaseAuthException catch (e) {
-                if (e.code == 'user-not-found') {
-                  await showErrorDialog(context, 'No user found for that email.');
-                } else if (e.code == 'invalid-credential') {
-                  await showErrorDialog(context, 'Wrong email or password provided for that user.');
-                } else {
-                  await showErrorDialog(context, 'Error: ${e.code}');
-                }
-              } catch (e) {
-                await showErrorDialog(context, 'Error: ${e.toString()}');
+              } on UserNotFoundAuthException {
+                await showErrorDialog(context, 'No user found for that email.');
+              } on InvalidCredentialAuthException {
+                await showErrorDialog(
+                  context,
+                  'Wrong email or password provided for that user.',
+                );
+              } on GenericAuthException {
+                await showErrorDialog(context, 'Authentication error');
               }
             },
             child: const Text("Login"),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pushNamedAndRemoveUntil(registerRoute, (route) => false);
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil(registerRoute, (route) => false);
             },
             child: const Text("Not registered yet? Register here!"),
-          )
+          ),
         ],
       ),
     );
