@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:notiforyou/constants/routes.dart';
+import 'package:notiforyou/constants/eight_bit_theme.dart';
 import 'package:notiforyou/services/auth/auth_service.dart';
-import 'package:notiforyou/view/login_view.dart';
+import 'package:notiforyou/view/authentications/login_view.dart';
 import 'package:notiforyou/view/notes/create_update_note_view.dart';
 import 'package:notiforyou/view/notes/notes_view.dart';
-import 'package:notiforyou/view/register_view.dart';
-import 'package:notiforyou/view/verify_email_view.dart';
+import 'package:notiforyou/view/authentications/register_view.dart';
+import 'package:notiforyou/view/authentications/verify_email_view.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      title: 'NotiforyouY - 8-Bit Style',
+      theme: EightBitTheme.themeData,
       home: const HomePage(),
       routes: {
         loginRoute: (context) => const LoginView(),
