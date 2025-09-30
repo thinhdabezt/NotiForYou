@@ -16,14 +16,26 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
   DatabaseNote? _note;
   late final NotesService _notesService;
   late final TextEditingController _textController;
+  late final FocusNode _focusNode;
   String _characterCount = "0";
+  Future<DatabaseNote>? _noteCreationFuture;
+  bool _listenerSetup = false;
 
   @override
   void initState() {
     _notesService = NotesService();
     _textController = TextEditingController();
+    _focusNode = FocusNode();
     _textController.addListener(_updateCharacterCount);
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_noteCreationFuture == null) {
+      _noteCreationFuture = createOrGetExistingNote(context);
+    }
   }
 
   @override
@@ -31,13 +43,17 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     _deleteNoteIfTextIsEmpty();
     _saveNoteIfTextNotEmpty();
     _textController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
   void _updateCharacterCount() {
-    setState(() {
-      _characterCount = _textController.text.length.toString();
-    });
+    final newCount = _textController.text.length.toString();
+    if (_characterCount != newCount) {
+      setState(() {
+        _characterCount = newCount;
+      });
+    }
   }
 
   void _textControllerListener() async {
@@ -60,6 +76,7 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     if (widgetNote != null) {
       _note = widgetNote;
       _textController.text = widgetNote.text;
+      _updateCharacterCount(); // Update character count after setting text
     }
 
     final existingNote = _note;
@@ -125,11 +142,20 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
           ),
         ),
         child: FutureBuilder(
-          future: createOrGetExistingNote(context),
+          future: _noteCreationFuture,
           builder: (context, snapshot) {
             switch (snapshot.connectionState) {
               case ConnectionState.done:
-                _setupTextControllerListener();
+                if (!_listenerSetup) {
+                  _setupTextControllerListener();
+                  _listenerSetup = true;
+                  // Ensure focus is requested after the widget is built
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_focusNode.canRequestFocus) {
+                      _focusNode.requestFocus();
+                    }
+                  });
+                }
                 return _buildNoteEditor();
               default:
                 return _buildLoadingState();
@@ -186,18 +212,22 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
               backgroundColor: EightBitTheme.inputBackground,
               child: TextField(
                 controller: _textController,
+                focusNode: _focusNode,
                 keyboardType: TextInputType.multiline,
                 maxLines: null,
                 expands: true,
+                autofocus: true,
+                textInputAction: TextInputAction.newline,
                 style: EightBitTheme.bodyStyle,
                 decoration: InputDecoration(
                   hintText: _getHintText(),
                   hintStyle: EightBitTheme.hintStyle.copyWith(
-                    color: EightBitTheme.secondaryText.withOpacity(0.6),
+                    color: EightBitTheme.secondaryText.withValues(alpha: 0.6),
                   ),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
                 ),
               ),
             ),
