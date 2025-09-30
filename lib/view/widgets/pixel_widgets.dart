@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:notiforyou/constants/eight_bit_theme.dart';
+import 'package:notiforyou/services/theme/theme_manager.dart';
+import 'package:notiforyou/services/audio/retro_sound_service.dart';
 
 class PixelButton extends StatefulWidget {
   final String text;
@@ -32,29 +33,51 @@ class _PixelButtonState extends State<PixelButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = themeManager.currentTheme;
     final backgroundColor = widget.backgroundColor ?? 
-        (widget.isSecondary ? EightBitTheme.secondaryButton : EightBitTheme.primaryButton);
-    final textColor = widget.textColor ?? EightBitTheme.primaryBackground;
-    final borderColor = widget.borderColor ?? EightBitTheme.borderColor;
+        (widget.isSecondary ? theme.secondaryButton : theme.primaryButton);
+    final textColor = widget.textColor ?? theme.primaryBackground;
+    final borderColor = widget.borderColor ?? theme.borderColor;
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
-      onTap: widget.onPressed,
+      onTap: () {
+        retroSounds.playButtonPress();
+        widget.onPressed?.call();
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         width: widget.width,
         height: widget.height ?? 48,
-        decoration: EightBitTheme.pixelButtonDecoration(
-          backgroundColor: backgroundColor,
-          borderColor: borderColor,
-          isPressed: _isPressed,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          border: Border.all(
+            color: borderColor,
+            width: 3.0,
+          ),
+          borderRadius: BorderRadius.circular(0),
+          boxShadow: _isPressed 
+            ? [] 
+            : [
+                const BoxShadow(
+                  color: Colors.black,
+                  offset: Offset(4, 4),
+                  blurRadius: 0,
+                ),
+              ],
         ),
         child: Center(
           child: Text(
             widget.text,
-            style: EightBitTheme.buttonStyle.copyWith(color: textColor),
+            style: TextStyle(
+              fontFamily: 'Courier',
+              fontSize: 16.0,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+              letterSpacing: 1.5,
+            ),
           ),
         ),
       ),
@@ -90,6 +113,8 @@ class PixelTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = themeManager.currentTheme;
+    
     return TextField(
       controller: controller,
       obscureText: obscureText,
@@ -98,11 +123,51 @@ class PixelTextField extends StatelessWidget {
       autocorrect: autocorrect,
       maxLines: maxLines,
       onChanged: onChanged,
-      style: EightBitTheme.bodyStyle,
-      decoration: EightBitTheme.pixelInputDecoration(
+      style: TextStyle(
+        fontFamily: 'Courier',
+        fontSize: 16.0,
+        color: theme.primaryText,
+        letterSpacing: 1.0,
+      ),
+      decoration: InputDecoration(
         hintText: hintText,
-        borderColor: borderColor ?? EightBitTheme.borderColor,
-        focusedBorderColor: focusedBorderColor ?? EightBitTheme.focusedBorderColor,
+        hintStyle: TextStyle(
+          fontFamily: 'Courier',
+          fontSize: 14.0,
+          color: const Color(0xFF666666),
+          letterSpacing: 1.0,
+        ),
+        filled: true,
+        fillColor: theme.inputBackground,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(0),
+          borderSide: BorderSide(
+            color: borderColor ?? theme.borderColor,
+            width: 3.0,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(0),
+          borderSide: BorderSide(
+            color: focusedBorderColor ?? theme.focusedBorderColor,
+            width: 3.0,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(0),
+          borderSide: BorderSide(
+            color: theme.errorBorderColor,
+            width: 3.0,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(0),
+          borderSide: BorderSide(
+            color: theme.errorBorderColor,
+            width: 3.0,
+          ),
+        ),
       ),
     );
   }
@@ -130,14 +195,27 @@ class PixelContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = themeManager.currentTheme;
+    
     return Container(
       width: width,
       height: height,
       margin: margin,
       padding: padding ?? const EdgeInsets.all(16),
-      decoration: EightBitTheme.pixelCardDecoration(
-        backgroundColor: backgroundColor ?? EightBitTheme.cardBackground,
-        borderColor: borderColor ?? EightBitTheme.borderColor,
+      decoration: BoxDecoration(
+        color: backgroundColor ?? theme.cardBackground,
+        border: Border.all(
+          color: borderColor ?? theme.borderColor,
+          width: 3.0,
+        ),
+        borderRadius: BorderRadius.circular(0),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black,
+            offset: Offset(4, 4),
+            blurRadius: 0,
+          ),
+        ],
       ),
       child: child,
     );
@@ -160,20 +238,36 @@ class PixelAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = themeManager.currentTheme;
+    
     return Container(
-      decoration: EightBitTheme.pixelAppBarDecoration(),
+      decoration: BoxDecoration(
+        color: theme.secondaryBackground,
+        border: const Border(
+          bottom: BorderSide(
+            color: Color(0xFF00FF00), // Use dynamic color later
+            width: 3.0,
+          ),
+        ),
+      ),
       child: AppBar(
         title: Text(
           title,
-          style: EightBitTheme.headingStyle,
+          style: TextStyle(
+            fontFamily: 'Courier',
+            fontSize: 20.0,
+            fontWeight: FontWeight.bold,
+            color: theme.secondaryText,
+            letterSpacing: 1.5,
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: actions,
         leading: leading,
         automaticallyImplyLeading: automaticallyImplyLeading,
-        iconTheme: const IconThemeData(
-          color: EightBitTheme.primaryText,
+        iconTheme: IconThemeData(
+          color: theme.primaryText,
         ),
       ),
     );
@@ -203,18 +297,37 @@ class PixelListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = themeManager.currentTheme;
+    
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      decoration: EightBitTheme.pixelCardDecoration(),
+      decoration: BoxDecoration(
+        color: theme.cardBackground,
+        border: Border.all(
+          color: theme.borderColor,
+          width: 3.0,
+        ),
+        borderRadius: BorderRadius.circular(0),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black,
+            offset: Offset(4, 4),
+            blurRadius: 0,
+          ),
+        ],
+      ),
       child: ListTile(
         title: title,
         subtitle: subtitle,
         leading: leading,
         trailing: trailing,
-        onTap: onTap,
+        onTap: () {
+          retroSounds.playNavigation();
+          onTap?.call();
+        },
         contentPadding: contentPadding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        textColor: EightBitTheme.primaryText,
-        iconColor: EightBitTheme.secondaryText,
+        textColor: theme.primaryText,
+        iconColor: theme.secondaryText,
       ),
     );
   }
@@ -245,23 +358,32 @@ class _PixelIconButtonState extends State<PixelIconButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = themeManager.currentTheme;
+    
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
-      onTap: widget.onPressed,
+      onTap: () {
+        retroSounds.playButtonPress();
+        widget.onPressed?.call();
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         padding: const EdgeInsets.all(8),
         decoration: _isPressed 
-          ? EightBitTheme.pixelButtonDecoration(
-              backgroundColor: EightBitTheme.tertiaryBackground,
-              isPressed: true,
+          ? BoxDecoration(
+              color: theme.tertiaryBackground,
+              border: Border.all(
+                color: theme.borderColor,
+                width: 3.0,
+              ),
+              borderRadius: BorderRadius.circular(0),
             )
           : null,
         child: Icon(
           widget.icon,
-          color: widget.color ?? EightBitTheme.primaryText,
+          color: widget.color ?? theme.primaryText,
           size: widget.size ?? 24,
         ),
       ),
@@ -287,12 +409,25 @@ class PixelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = themeManager.currentTheme;
+    
     return Container(
       margin: margin ?? const EdgeInsets.all(8),
       padding: padding ?? const EdgeInsets.all(16),
-      decoration: EightBitTheme.pixelCardDecoration(
-        backgroundColor: backgroundColor ?? EightBitTheme.cardBackground,
-        borderColor: borderColor ?? EightBitTheme.borderColor,
+      decoration: BoxDecoration(
+        color: backgroundColor ?? theme.cardBackground,
+        border: Border.all(
+          color: borderColor ?? theme.borderColor,
+          width: 3.0,
+        ),
+        borderRadius: BorderRadius.circular(0),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black,
+            offset: Offset(4, 4),
+            blurRadius: 0,
+          ),
+        ],
       ),
       child: child,
     );
@@ -313,22 +448,24 @@ class PixelProgressIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = themeManager.currentTheme;
+    
     return Container(
       height: 20,
       decoration: BoxDecoration(
         border: Border.all(
-          color: EightBitTheme.borderColor,
-          width: EightBitTheme.pixelBorderWidth,
+          color: theme.borderColor,
+          width: 3.0,
         ),
-        borderRadius: BorderRadius.circular(EightBitTheme.pixelRadius),
+        borderRadius: BorderRadius.circular(0),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(EightBitTheme.pixelRadius),
+        borderRadius: BorderRadius.circular(0),
         child: LinearProgressIndicator(
           value: value,
-          backgroundColor: backgroundColor ?? EightBitTheme.tertiaryBackground,
+          backgroundColor: backgroundColor ?? theme.tertiaryBackground,
           valueColor: AlwaysStoppedAnimation<Color>(
-            valueColor ?? EightBitTheme.primaryButton,
+            valueColor ?? theme.primaryButton,
           ),
         ),
       ),
